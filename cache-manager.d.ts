@@ -12,6 +12,8 @@ interface CacheManager {
   performTransaction<T = any>(writeFn: WriteFunction<T>): T;
   read<T = any>(query: QueryKey): T;
   write<T = any>(query: QueryKey, data: T): void;
+  evict(query: QueryKey): boolean;
+  gc(): void;
 }
 
 export function createCacheManager(

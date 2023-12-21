@@ -33,6 +33,7 @@ export class WatchedMutationLink extends ApolloLink {
     this.mutationAndSubscriptionManager = createMutationsAndSubscriptionsManager(mutationOrSubscriptionToQueryResolverMap);
     this.queryManager = createQueryKeyManager();
     this.inflightOptimisticRequests = createInflightRequestManager();
+    this.evictSentinel = Object.create(null);
     this.debugLog({
       message: 'Success --- Constructed our link',
       watchedMutationsAndSubscriptions: this.mutationAndSubscriptionManager.getMutationOrSubscriptionNames()
@@ -84,7 +85,8 @@ export class WatchedMutationLink extends ApolloLink {
         name: queryName,
         variables: queryKey.variables,
         result: cachedQueryData
-      }
+      },
+      evict: this.evictSentinel
     } : {
       subscription: {
         name: mutationOrSubscriptionName,
@@ -95,7 +97,8 @@ export class WatchedMutationLink extends ApolloLink {
         name: queryName,
         variables: queryKey.variables,
         result: cachedQueryData
-      }
+      },
+      evict: this.evictSentinel
     };
     const updatedData = updateQueryCb(cbData);
     if (updatedData !== null && updatedData !== undefined) {
@@ -124,7 +127,23 @@ export class WatchedMutationLink extends ApolloLink {
       return items;
     }, []);
     this.cache.performTransaction(() => {
-      itemsToWrite.forEach(data => this.cache.write(data.queryKey, data.updatedData));
+      let runCacheGC = false;
+      itemsToWrite.forEach(data => {
+        if (data.updatedData === this.evictSentinel) {
+          const evicted = this.cache.evict(data.queryKey);
+          if (evicted) {
+            // Eviction was successful. We should remove it from our queries to update.
+            const queryName = getQueryName(data.queryKey.query);
+            this.removeRelatedQuery(queryName, data.queryKey);
+          }
+          runCacheGC ||= evicted;
+        } else {
+          this.cache.write(data.queryKey, data.updatedData);
+        }
+      });
+      if (runCacheGC) {
+        this.cache.gc();
+      }
     });
   }
 

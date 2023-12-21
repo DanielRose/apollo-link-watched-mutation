@@ -55,15 +55,15 @@ new WatchedMutationLink(
   cache, // whatever is passed to the apollo-client
   {
     SaveTodo: {
-      TodoList: ({ mutation, query }) => { /* */ }
+      TodoList: ({ mutation, query, evict }) => { /* */ }
     }
     SavedTodos: {
-      TodoList: ({ subscription, query }) => { /* */ }
+      TodoList: ({ subscription, query, evict }) => { /* */ }
     }
   }
 )
 ```
-By adding this WatchedMutationLink to our networking stack, the exported apollo-client would invoke the callback provided for each cached query named *TodoList* whenever a successful mutation named *SaveTodo* is received, as well as the callback for each subscription named *SavedTodos*. If the WatchedMutationLink receives an updated form of the cached data from the callback, it will write that updated data to the cache.
+By adding this WatchedMutationLink to our networking stack, the exported apollo-client would invoke the callback provided for each cached query named *TodoList* whenever a successful mutation named *SaveTodo* is received, as well as the callback for each subscription named *SavedTodos*. If the WatchedMutationLink receives an updated form of the cached data from the callback, it will write that updated data to the cache. Alternatively, if you return `evict`, the query will be evicted from the cache.
 
 By monitoring networking traffic, the Link figures out when you may want to update your cache based off a mutation/subscription and query and you determine how it should update all in one place.
 
@@ -79,6 +79,7 @@ For a mutation, the callback is invoked with the following arguments:
   - name: string, name of the query
   - variables: object, variables of the query
   - result: object, cached data of the query
+- evict: sentinel value
 
 Similarly, for a subscription, the callback is invoked with the following arguments:
 
@@ -90,8 +91,11 @@ Similarly, for a subscription, the callback is invoked with the following argume
   - name: string, name of the query
   - variables: object, variables of the query
   - result: object, cached data of the query
+- evict: sentinel value
 
 If the callback returns data (not null or undefined), the updated data is written to the cache using writeQuery.
+
+If the `evict` sentinel value is returned, the query is removed from the cache. As a result, the query will need to be fetched from the network again. This can be useful if the query logic is too complex to be replicated in the frontend, for example.
 
 ## Example usage
 

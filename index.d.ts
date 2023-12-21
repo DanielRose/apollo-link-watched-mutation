@@ -6,8 +6,14 @@ import {
 import type { ExecutionResult } from "graphql";
 import { CacheManager } from "./cache-manager";
 
+declare const _evictSentinel: unique symbol;
+export interface EvictSentinel {
+  [_evictSentinel]: true;
+}
+
 export class WatchedMutationLink extends ApolloLink {
   readonly cache: CacheManager;
+  readonly evictSentinel: EvictSentinel;
   debug?: boolean | number;
   readOnly?: boolean | number;
 
@@ -59,6 +65,7 @@ export interface MutationCallbackArgs<
     TMutationExtensions
   >;
   query: Query<TQueryData, TQueryVariables>;
+  evict: EvictSentinel;
 }
 
 export interface SubscriptionCallbackArgs<
@@ -74,6 +81,7 @@ export interface SubscriptionCallbackArgs<
     TSubscriptionExtensions
   >;
   query: Query<TQueryData, TQueryVariables>;
+  evict: EvictSentinel;
 }
 
 export type MutationCallback<
@@ -92,7 +100,7 @@ export type MutationCallback<
     TMutationContext,
     TMutationExtensions
   >
-) => TQueryData | null | undefined;
+) => TQueryData | EvictSentinel | null | undefined;
 
 export type SubscriptionCallback<
   TQueryData = any,
@@ -108,7 +116,7 @@ export type SubscriptionCallback<
     TSubscriptionVariables,
     TSubscriptionExtensions
   >
-) => TQueryData | null | undefined;
+) => TQueryData | EvictSentinel | null | undefined;
 
 export interface MutationOrSubscriptionToQueryResolverMap {
   [mutationOrSubscription: string]: {
