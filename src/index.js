@@ -31,7 +31,7 @@ export class WatchedMutationLink extends ApolloLink {
     this.debug = debug;
     this.readOnly = readOnly;
     this.mutationAndSubscriptionManager = createMutationsAndSubscriptionsManager(mutationOrSubscriptionToQueryResolverMap);
-    this.queryManager = createQueryKeyManager();
+    this.queryManager = createQueryKeyManager(debug);
     this.inflightOptimisticRequests = createInflightRequestManager();
     this.evictSentinel = Object.create(null);
     this.debugLog({

@@ -87,10 +87,9 @@ export const createCacheManager = (cache, debug, readOnly) => {
         });
         if (debug) {
           window.console.log({
-            message: 'Success --- Evicted a query from the cache upon a mutation/subscription',
-            queryName: queryName,
+            message: evicted ? 'Success --- Evicted a query from the cache' : 'Failure --- Unable to evict a query from the cache',
             cacheKey: query,
-            evicted
+            fieldNames: cacheIds
           });
         }
         return evicted;
@@ -98,8 +97,8 @@ export const createCacheManager = (cache, debug, readOnly) => {
         if (debug) {
           window.console.log({
             message: 'Error --- Unable to evict from cache',
-            queryName: queryName,
             cacheKey: query,
+            fieldNames: cacheIds,
             error
           });
         }
